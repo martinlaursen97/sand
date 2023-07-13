@@ -83,6 +83,8 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 		return
 	}
 
+	sp.Velocity += gravity
+
 	nextPosition := Vector{
 		X: sp.Position.X,
 		Y: sp.Position.Y + float64(sp.Velocity),
@@ -95,13 +97,17 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 		}
 	}
 
-	nextParticle := world.Particles[uint32(nextPosition.X)][uint32(nextPosition.Y)]
+	// nextParticle := world.GetParticleAt(uint32(nextPosition.X), uint32(nextPosition.Y))
 
-	world.SwapPosition(sp, nextParticle)
+	// if _, ok := nextParticle.(*AirParticle); ok {
+	// 	world.SwapPosition(sp, nextParticle)
+	// 	sp.Position = nextPosition
+	// }
 
-	sp.Velocity += gravity
+	world.MoveParticle(sp, uint32(nextPosition.X), uint32(nextPosition.Y))
+	sp.Position = nextPosition
+
 	sp.HasUpdated = true
-
 }
 
 func (sp *SandParticle) Draw(screen *ebiten.Image) {

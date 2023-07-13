@@ -53,10 +53,6 @@ func (w *World) Reset() {
 	}
 }
 
-func (w *World) InsertSandParticle(p *SandParticle) {
-	w.Particles[uint32(p.Position.X)][uint32(p.Position.Y)] = p
-}
-
 func (w *World) SwapPosition(p1, p2 Particle) {
 	p1Pos := p1.GetPosition()
 	p2Pos := p2.GetPosition()
@@ -66,4 +62,46 @@ func (w *World) SwapPosition(p1, p2 Particle) {
 
 	w.Particles[uint32(p1Pos.X)][uint32(p1Pos.Y)] = p1
 	w.Particles[uint32(p2Pos.X)][uint32(p2Pos.Y)] = p2
+}
+
+func (w *World) GetParticleAt(x, y uint32) Particle {
+	return w.Particles[x][y]
+}
+
+func (w *World) InsertParticle(p Particle) {
+	w.Particles[uint32(p.GetPosition().X)][uint32(p.GetPosition().Y)] = p
+}
+
+func (w *World) MoveParticle(p Particle, x, y uint32) {
+	w.Particles[x][y] = p
+}
+
+// Debugging
+
+func (w *World) GetAirParticleCount() int {
+	count := 0
+
+	for _, row := range w.Particles {
+		for _, particle := range row {
+			if _, ok := particle.(*AirParticle); ok {
+				count++
+			}
+		}
+	}
+
+	return count
+}
+
+func (w *World) GetSandParticleCount() int {
+	count := 0
+
+	for _, row := range w.Particles {
+		for _, particle := range row {
+			if _, ok := particle.(*SandParticle); ok {
+				count++
+			}
+		}
+	}
+
+	return count
 }

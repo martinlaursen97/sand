@@ -34,10 +34,18 @@ func (g *Game) Update() error {
 			float64(cursorPositionY),
 		)
 
-		g.world.InsertSandParticle(sp)
+		g.world.InsertParticle(sp)
 	}
 
 	g.world.Reset()
+
+	// For debugging
+	if ebiten.IsKeyPressed(ebiten.Key1) {
+		fmt.Println(g.world.GetAirParticleCount())
+	}
+	if ebiten.IsKeyPressed(ebiten.Key2) {
+		fmt.Println(g.world.GetSandParticleCount())
+	}
 
 	return nil
 }
