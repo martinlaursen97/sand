@@ -7,6 +7,8 @@ import (
 const (
 	screenWidth  = 320
 	screenHeight = 240
+	gravity      = 0.1
+	maxVelocity  = 2.5
 )
 
 type World struct {

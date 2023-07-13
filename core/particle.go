@@ -69,9 +69,13 @@ func NewAirParticle(x, y int) *AirParticle {
 
 //// SandParticle ////
 
+const (
+	sandInitialVelocity = 0.5
+)
+
 type SandParticle struct {
 	BaseParticle
-	Velocity uint32
+	Velocity float32
 }
 
 func (sp *SandParticle) Update(world *World, dt float64) {
@@ -84,11 +88,20 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 		Y: sp.Position.Y + float64(sp.Velocity),
 	}
 
+	if nextPosition.Y >= screenHeight {
+		nextPosition = Vector{
+			X: sp.Position.X,
+			Y: screenHeight - 1,
+		}
+	}
+
 	nextParticle := world.Particles[uint32(nextPosition.X)][uint32(nextPosition.Y)]
 
 	world.SwapPosition(sp, nextParticle)
 
+	sp.Velocity += gravity
 	sp.HasUpdated = true
+
 }
 
 func (sp *SandParticle) Draw(screen *ebiten.Image) {
@@ -106,7 +119,7 @@ func NewSandParticle(x, y float64) *SandParticle {
 			Size:     1,
 			Color:    color.RGBA{R: 255, G: 255, B: 0, A: 255},
 		},
-		Velocity: 1,
+		Velocity: sandInitialVelocity,
 	}
 
 	return p
