@@ -1,6 +1,9 @@
 package core
 
-import "math"
+import (
+	"math"
+	"math/rand"
+)
 
 func roundYCoordinate(y float64) float64 {
 	if y-math.Floor(y) >= 0.5 {
@@ -31,7 +34,7 @@ func checkBounds(x, y float64) (float64, float64) {
 }
 
 func withinBounds(x, y uint32) bool {
-	if x <= 0 {
+	if x < 0 {
 		return false
 	}
 
@@ -48,4 +51,8 @@ func withinBounds(x, y uint32) bool {
 	}
 
 	return true
+}
+
+func randomColorInRange(min, max uint8) uint8 {
+	return uint8(rand.Intn(int(max-min)) + int(min))
 }

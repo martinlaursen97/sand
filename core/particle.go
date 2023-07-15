@@ -181,12 +181,21 @@ func (sp *SandParticle) ResetVelocity() {
 	sp.Velocity.Y = 0
 }
 
+func randomSandColor() color.RGBA {
+	return color.RGBA{
+		R: randomColorInRange(180, 210),
+		G: randomColorInRange(160, 190),
+		B: randomColorInRange(110, 140),
+		A: 0,
+	}
+}
+
 func NewSandParticle(x, y float64) *SandParticle {
 	p := &SandParticle{
 		BaseParticle: BaseParticle{
 			Position: Vector{X: x, Y: y},
 			Size:     1,
-			Color:    color.RGBA{R: 255, G: 255, B: 0, A: 255},
+			Color:    randomSandColor(),
 		},
 		Velocity: Vector{X: -sandInitialVelocityX + rand.Float64(), Y: sandInitialVelocityY},
 	}
