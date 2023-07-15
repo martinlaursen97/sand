@@ -10,7 +10,8 @@ import (
 )
 
 type Game struct {
-	world *core.World
+	world     *core.World
+	brushSize int
 }
 
 func (g *Game) Update() error {
@@ -21,9 +22,26 @@ func (g *Game) Update() error {
 	cursorPositionX, cursorPositionY := ebiten.CursorPosition()
 
 	mouseClicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
+	spacePressed := ebiten.IsKeyPressed(ebiten.KeySpace)
+	increaseBrushSize := ebiten.IsKeyPressed(ebiten.Key1)
+	decreaseBrushSize := ebiten.IsKeyPressed(ebiten.Key2)
 
 	if mouseClicked {
-		g.world.DrawWithBrush(5, cursorPositionX, cursorPositionY)
+		g.world.DrawWithBrush(g.brushSize, cursorPositionX, cursorPositionY)
+	}
+
+	if spacePressed {
+		g.world.Clear()
+	}
+
+	if increaseBrushSize {
+		g.brushSize += 2
+	}
+
+	if decreaseBrushSize {
+		if g.brushSize > 1 {
+			g.brushSize -= 2
+		}
 	}
 
 	g.world.Reset()
@@ -46,6 +64,7 @@ func main() {
 
 	game := &Game{}
 	game.world = core.NewWorld()
+	game.brushSize = 5
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

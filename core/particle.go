@@ -84,7 +84,8 @@ const (
 
 type SandParticle struct {
 	BaseParticle
-	Velocity Vector
+	Velocity  Vector
+	IsFalling bool
 }
 
 func (sp *SandParticle) Update(world *World, dt float64) {
@@ -112,6 +113,7 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 func (sp *SandParticle) CheckCollisionsBelowAndSides(world *World) (Vector, bool) {
 	if !world.IsEmpty(uint32(sp.Position.X), uint32(sp.Position.Y+1)) {
 		sp.ResetVelocity()
+
 		if withinBounds(uint32(sp.Position.X-1), uint32(sp.Position.Y+1)) &&
 			world.IsEmpty(uint32(sp.Position.X-1), uint32(sp.Position.Y+1)) {
 
@@ -121,6 +123,7 @@ func (sp *SandParticle) CheckCollisionsBelowAndSides(world *World) (Vector, bool
 
 			return Vector{X: sp.Position.X + 1, Y: sp.Position.Y + 1}, true
 		}
+
 	}
 
 	return Vector{}, false
@@ -161,6 +164,7 @@ func (sp *SandParticle) GetNextPosition(world *World) Vector {
 
 		if _, ok := world.GetParticleAt(uint32(x), uint32(y)).(*AirParticle); !ok {
 			// Hit something, return the position before the collision
+
 			sp.ResetVelocity()
 
 			return Vector{X: prevX, Y: prevY}

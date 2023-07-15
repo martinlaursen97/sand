@@ -7,7 +7,7 @@ import (
 const (
 	worldWidth  = 320
 	worldHeight = 240
-	gravity     = 0.15
+	gravity     = 0.5
 	maxVelocity = 10
 )
 
@@ -34,6 +34,14 @@ func NewWorld() *World {
 
 	return &World{
 		Particles: particleGrid,
+	}
+}
+
+func (w *World) Clear() {
+	for i := 0; i < worldWidth; i++ {
+		for j := 0; j < worldHeight; j++ {
+			w.Particles[i][j] = NewAirParticle(i, j)
+		}
 	}
 }
 
@@ -86,10 +94,6 @@ func (w *World) GetParticleAt(x, y uint32) Particle {
 
 func (w *World) InsertParticle(p Particle) {
 	w.Particles[uint32(p.GetPosition().X)][uint32(p.GetPosition().Y)] = p
-}
-
-func (w *World) MoveParticle(p Particle, x, y uint32) {
-	w.Particles[x][y] = p
 }
 
 func (w *World) DrawWithBrush(size int, x, y int) {
