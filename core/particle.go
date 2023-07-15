@@ -88,7 +88,7 @@ type SandParticle struct {
 }
 
 func (sp *SandParticle) Update(world *World, dt float64) {
-	if sp.HasUpdated || sp.Position.Y+1 >= screenHeight {
+	if sp.HasUpdated || sp.Position.Y+1 >= worldHeight {
 		return
 	}
 

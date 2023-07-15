@@ -5,20 +5,28 @@ import (
 )
 
 const (
-	screenWidth  = 320
-	screenHeight = 240
-	gravity      = 0.15
-	maxVelocity  = 2.5
+	worldWidth  = 320
+	worldHeight = 240
+	gravity     = 0.15
+	maxVelocity = 2.5
 )
 
 type World struct {
 	Particles [][]Particle
 }
 
+func GetWorldWidth() int {
+	return worldWidth
+}
+
+func GetWorldHeight() int {
+	return worldHeight
+}
+
 func NewWorld() *World {
-	particleGrid := make([][]Particle, screenWidth)
+	particleGrid := make([][]Particle, worldWidth)
 	for i := range particleGrid {
-		particleGrid[i] = make([]Particle, screenHeight)
+		particleGrid[i] = make([]Particle, worldHeight)
 		for j := range particleGrid[i] {
 			particleGrid[i][j] = NewAirParticle(i, j)
 		}
@@ -108,8 +116,8 @@ func (w *World) GetSandParticleCount() int {
 
 func (w *World) PrintGridT() {
 	print("SKIP\n")
-	for i := 0; i < screenHeight; i++ {
-		for j := 0; j < screenWidth; j++ {
+	for i := 0; i < worldHeight; i++ {
+		for j := 0; j < worldWidth; j++ {
 			switch w.Particles[j][i].(type) {
 			case *AirParticle:
 				print("A ")
@@ -122,5 +130,5 @@ func (w *World) PrintGridT() {
 }
 
 func (w *World) WithinBounds(x, y uint32) bool {
-	return x < screenWidth && y < screenHeight && x >= 0 && y >= 0
+	return x < worldWidth && y < worldHeight && x >= 0 && y >= 0
 }
