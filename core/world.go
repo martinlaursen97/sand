@@ -2,33 +2,21 @@ package core
 
 import (
 	"github.com/hajimehoshi/ebiten/v2"
-)
+	"github.com/martinlaursen97/sand/config"
 
-const (
-	worldWidth  = 320
-	worldHeight = 240
-	gravity     = 0.5
-	maxVelocity = 10
+	"github.com/martinlaursen97/sand/utils"
 )
 
 type World struct {
 	Particles [][]Particle
 }
 
-func GetWorldWidth() int {
-	return worldWidth
-}
-
-func GetWorldHeight() int {
-	return worldHeight
-}
-
 func NewWorld() *World {
-	particleGrid := make([][]Particle, worldWidth)
+	particleGrid := make([][]Particle, config.ScreenWidth)
 	for i := range particleGrid {
-		particleGrid[i] = make([]Particle, worldHeight)
+		particleGrid[i] = make([]Particle, config.ScreenHeight)
 		for j := range particleGrid[i] {
-			particleGrid[i][j] = NewAirParticle(i, j)
+			particleGrid[i][j] = CreateAirParticle(i, j)
 		}
 	}
 
@@ -38,9 +26,9 @@ func NewWorld() *World {
 }
 
 func (w *World) Clear() {
-	for i := 0; i < worldWidth; i++ {
-		for j := 0; j < worldHeight; j++ {
-			w.Particles[i][j] = NewAirParticle(i, j)
+	for i := 0; i < config.ScreenWidth; i++ {
+		for j := 0; j < config.ScreenHeight; j++ {
+			w.Particles[i][j] = CreateAirParticle(i, j)
 		}
 	}
 }
@@ -69,7 +57,7 @@ func (w *World) Reset() {
 	}
 }
 
-func (w *World) IsEmpty(x, y uint32) bool {
+func (w *World) IsEmpty(x, y int) bool {
 	if _, ok := w.Particles[x][y].(*AirParticle); ok {
 		return true
 	}
@@ -81,26 +69,27 @@ func (w *World) SwapPosition(p1, p2 Particle) {
 	p1Pos := p1.GetPosition()
 	p2Pos := p2.GetPosition()
 
-	w.Particles[uint32(p1Pos.X)][uint32(p1Pos.Y)] = p2
-	w.Particles[uint32(p2Pos.X)][uint32(p2Pos.Y)] = p1
+	w.Particles[int(p1Pos.X)][int(p1Pos.Y)] = p2
+	w.Particles[int(p2Pos.X)][int(p2Pos.Y)] = p1
 
 	p1.SetPosition(p2Pos)
 	p2.SetPosition(p1Pos)
 }
 
-func (w *World) GetParticleAt(x, y uint32) Particle {
+func (w *World) GetParticleAt(x, y int) Particle {
 	return w.Particles[x][y]
 }
 
 func (w *World) InsertParticle(p Particle) {
-	w.Particles[uint32(p.GetPosition().X)][uint32(p.GetPosition().Y)] = p
+	w.Particles[int(p.GetPosition().X)][int(p.GetPosition().Y)] = p
 }
 
-func (w *World) DrawWithBrush(size int, x, y int) {
-
+func (w *World) DrawWithBrush(size, x, y int) {
 	for i := -size / 2; i <= size/2; i += 2 {
-		if withinBounds(uint32(x+i), uint32(y)) {
-			w.InsertParticle(NewSandParticle(float64(x+i), float64(y)))
+		if utils.WithinBounds(x+i, y) {
+			w.InsertParticle(
+				CreateSandParticle(x+i, y),
+			)
 		}
 	}
 }

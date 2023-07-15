@@ -6,6 +6,7 @@ import (
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
+	"github.com/martinlaursen97/sand/config"
 	"github.com/martinlaursen97/sand/core"
 )
 
@@ -55,11 +56,11 @@ func (g *Game) Draw(screen *ebiten.Image) {
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
-	return core.GetWorldWidth(), core.GetWorldHeight()
+	return config.ScreenWidth, config.ScreenHeight
 }
 
 func main() {
-	ebiten.SetWindowSize(core.GetWorldWidth()*2, core.GetWorldHeight()*2)
+	ebiten.SetWindowSize(config.ScreenWidth*2, config.ScreenHeight*2)
 	ebiten.SetWindowTitle("Sand")
 
 	game := &Game{}
