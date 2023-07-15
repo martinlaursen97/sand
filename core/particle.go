@@ -16,7 +16,7 @@ type Particle interface {
 	SetPosition(Vector)
 }
 
-type MoveableParticle interface {
+type SolidMoveable interface {
 	Particle
 	GetNextPosition(world *World, nextPos Vector) Vector
 	ResetVelocity()
@@ -79,7 +79,7 @@ func NewAirParticle(x, y int) *AirParticle {
 
 const (
 	sandInitialVelocityX = 0.5
-	sandInitialVelocityY = 0.2
+	sandInitialVelocityY = 0.15
 )
 
 type SandParticle struct {
@@ -93,8 +93,13 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 	}
 
 	sp.Velocity.Y += gravity
+	sp.Velocity.Y = math.Min(sp.Velocity.Y, maxVelocity)
 
-	nextPosition := sp.GetNextPosition(world)
+	nextPosition, collided := sp.CheckCollisionsBelowAndSides(world)
+
+	if !collided {
+		nextPosition = sp.GetNextPosition(world)
+	}
 
 	nextParticle := world.GetParticleAt(uint32(nextPosition.X), uint32(nextPosition.Y))
 
@@ -102,6 +107,23 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 	sp.Position = nextPosition
 
 	sp.HasUpdated = true
+}
+
+func (sp *SandParticle) CheckCollisionsBelowAndSides(world *World) (Vector, bool) {
+	if !world.IsEmpty(uint32(sp.Position.X), uint32(sp.Position.Y+1)) {
+		sp.ResetVelocity()
+		if withinBounds(uint32(sp.Position.X-1), uint32(sp.Position.Y+1)) &&
+			world.IsEmpty(uint32(sp.Position.X-1), uint32(sp.Position.Y+1)) {
+
+			return Vector{X: sp.Position.X - 1, Y: sp.Position.Y + 1}, true
+		} else if withinBounds(uint32(sp.Position.X+1), uint32(sp.Position.Y+1)) &&
+			world.IsEmpty(uint32(sp.Position.X+1), uint32(sp.Position.Y+1)) {
+
+			return Vector{X: sp.Position.X + 1, Y: sp.Position.Y + 1}, true
+		}
+	}
+
+	return Vector{}, false
 }
 
 func (sp *SandParticle) Draw(screen *ebiten.Image) {
@@ -138,6 +160,9 @@ func (sp *SandParticle) GetNextPosition(world *World) Vector {
 		x, y = checkBounds(x, y)
 
 		if _, ok := world.GetParticleAt(uint32(x), uint32(y)).(*AirParticle); !ok {
+			// Hit something, return the position before the collision
+			sp.ResetVelocity()
+
 			return Vector{X: prevX, Y: prevY}
 		}
 
@@ -145,6 +170,7 @@ func (sp *SandParticle) GetNextPosition(world *World) Vector {
 
 	}
 
+	// Did not hit anything, return the next position
 	nextPos.X, nextPos.Y = checkBounds(nextPos.X, nextPos.Y)
 
 	return nextPos

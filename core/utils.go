@@ -29,3 +29,23 @@ func checkBounds(x, y float64) (float64, float64) {
 
 	return x, y
 }
+
+func withinBounds(x, y uint32) bool {
+	if x <= 0 {
+		return false
+	}
+
+	if x >= worldWidth {
+		return false
+	}
+
+	if y < 0 {
+		return false
+	}
+
+	if y >= worldHeight {
+		return false
+	}
+
+	return true
+}

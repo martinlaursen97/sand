@@ -19,44 +19,14 @@ func (g *Game) Update() error {
 	g.world.Update(dt)
 
 	cursorPositionX, cursorPositionY := ebiten.CursorPosition()
+
 	mouseClicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
-	withinBounds := g.world.WithinBounds(
-		uint32(cursorPositionX),
-		uint32(cursorPositionY),
-	)
 
-	if mouseClicked && withinBounds {
-		sp := core.NewSandParticle(
-			float64(cursorPositionX),
-			float64(cursorPositionY),
-		)
-
-		g.world.InsertParticle(sp)
-
-		sp1 := core.NewSandParticle(
-			float64(cursorPositionX-2),
-			float64(cursorPositionY),
-		)
-
-		g.world.InsertParticle(sp1)
-
-		sp2 := core.NewSandParticle(
-			float64(cursorPositionX+4),
-			float64(cursorPositionY),
-		)
-
-		g.world.InsertParticle(sp2)
+	if mouseClicked {
+		g.world.DrawWithBrush(5, cursorPositionX, cursorPositionY)
 	}
 
 	g.world.Reset()
-
-	// For debugging
-	if ebiten.IsKeyPressed(ebiten.Key1) {
-		fmt.Println(g.world.GetAirParticleCount())
-	}
-	if ebiten.IsKeyPressed(ebiten.Key2) {
-		fmt.Println(g.world.GetSandParticleCount())
-	}
 
 	return nil
 }
