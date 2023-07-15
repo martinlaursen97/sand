@@ -7,7 +7,7 @@ import (
 const (
 	screenWidth  = 320
 	screenHeight = 240
-	gravity      = 0.1
+	gravity      = 0.15
 	maxVelocity  = 2.5
 )
 
@@ -57,11 +57,11 @@ func (w *World) SwapPosition(p1, p2 Particle) {
 	p1Pos := p1.GetPosition()
 	p2Pos := p2.GetPosition()
 
+	w.Particles[uint32(p1Pos.X)][uint32(p1Pos.Y)] = p2
+	w.Particles[uint32(p2Pos.X)][uint32(p2Pos.Y)] = p1
+
 	p1.SetPosition(p2Pos)
 	p2.SetPosition(p1Pos)
-
-	w.Particles[uint32(p1Pos.X)][uint32(p1Pos.Y)] = p1
-	w.Particles[uint32(p2Pos.X)][uint32(p2Pos.Y)] = p2
 }
 
 func (w *World) GetParticleAt(x, y uint32) Particle {
@@ -104,4 +104,23 @@ func (w *World) GetSandParticleCount() int {
 	}
 
 	return count
+}
+
+func (w *World) PrintGridT() {
+	print("SKIP\n")
+	for i := 0; i < screenHeight; i++ {
+		for j := 0; j < screenWidth; j++ {
+			switch w.Particles[j][i].(type) {
+			case *AirParticle:
+				print("A ")
+			case *SandParticle:
+				print("S ")
+			}
+		}
+		println()
+	}
+}
+
+func (w *World) WithinBounds(x, y uint32) bool {
+	return x < screenWidth && y < screenHeight && x >= 0 && y >= 0
 }

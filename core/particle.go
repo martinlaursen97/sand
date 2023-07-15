@@ -2,6 +2,8 @@ package core
 
 import (
 	"image/color"
+	"math"
+	"math/rand"
 
 	"github.com/hajimehoshi/ebiten/v2"
 )
@@ -12,6 +14,12 @@ type Particle interface {
 	Reset()
 	GetPosition() Vector
 	SetPosition(Vector)
+}
+
+type MoveableParticle interface {
+	Particle
+	GetNextPosition(world *World, nextPos Vector) Vector
+	ResetVelocity()
 }
 
 //// BaseParticle ////
@@ -70,12 +78,13 @@ func NewAirParticle(x, y int) *AirParticle {
 //// SandParticle ////
 
 const (
-	sandInitialVelocity = 0.5
+	sandInitialVelocityX = 0.5
+	sandInitialVelocityY = 0.2
 )
 
 type SandParticle struct {
 	BaseParticle
-	Velocity float32
+	Velocity Vector
 }
 
 func (sp *SandParticle) Update(world *World, dt float64) {
@@ -83,28 +92,13 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 		return
 	}
 
-	sp.Velocity += gravity
+	sp.Velocity.Y += gravity
 
-	nextPosition := Vector{
-		X: sp.Position.X,
-		Y: sp.Position.Y + float64(sp.Velocity),
-	}
+	nextPosition := sp.GetNextPosition(world)
 
-	if nextPosition.Y >= screenHeight {
-		nextPosition = Vector{
-			X: sp.Position.X,
-			Y: screenHeight - 1,
-		}
-	}
+	nextParticle := world.GetParticleAt(uint32(nextPosition.X), uint32(nextPosition.Y))
 
-	// nextParticle := world.GetParticleAt(uint32(nextPosition.X), uint32(nextPosition.Y))
-
-	// if _, ok := nextParticle.(*AirParticle); ok {
-	// 	world.SwapPosition(sp, nextParticle)
-	// 	sp.Position = nextPosition
-	// }
-
-	world.MoveParticle(sp, uint32(nextPosition.X), uint32(nextPosition.Y))
+	world.SwapPosition(sp, nextParticle)
 	sp.Position = nextPosition
 
 	sp.HasUpdated = true
@@ -118,6 +112,49 @@ func (sp *SandParticle) Reset() {
 	sp.HasUpdated = false
 }
 
+func (sp *SandParticle) GetNextPosition(world *World) Vector {
+
+	nextPos := Vector{
+		X: sp.Position.X + sp.Velocity.X,
+		Y: sp.Position.Y + sp.Velocity.Y,
+	}
+
+	vx := nextPos.X - sp.Position.X
+	vy := nextPos.Y - sp.Position.Y
+
+	dist := math.Sqrt(vx*vx + vy*vy)
+
+	xIncrement, yIncrement := vx/dist, vy/dist
+
+	numPoints := int(dist)
+
+	prevX, prevY := sp.Position.X, sp.Position.Y
+
+	for i := 1; i <= numPoints; i++ {
+		x := sp.Position.X + xIncrement*float64(i)
+		y := sp.Position.Y + yIncrement*float64(i)
+
+		y = roundYCoordinate(y)
+		x, y = checkBounds(x, y)
+
+		if _, ok := world.GetParticleAt(uint32(x), uint32(y)).(*AirParticle); !ok {
+			return Vector{X: prevX, Y: prevY}
+		}
+
+		prevX, prevY = x, y
+
+	}
+
+	nextPos.X, nextPos.Y = checkBounds(nextPos.X, nextPos.Y)
+
+	return nextPos
+}
+
+func (sp *SandParticle) ResetVelocity() {
+	sp.Velocity.X = 0
+	sp.Velocity.Y = 0
+}
+
 func NewSandParticle(x, y float64) *SandParticle {
 	p := &SandParticle{
 		BaseParticle: BaseParticle{
@@ -125,7 +162,7 @@ func NewSandParticle(x, y float64) *SandParticle {
 			Size:     1,
 			Color:    color.RGBA{R: 255, G: 255, B: 0, A: 255},
 		},
-		Velocity: sandInitialVelocity,
+		Velocity: Vector{X: -sandInitialVelocityX + rand.Float64(), Y: sandInitialVelocityY},
 	}
 
 	return p

@@ -25,8 +25,10 @@ func (g *Game) Update() error {
 
 	cursorPositionX, cursorPositionY := ebiten.CursorPosition()
 	mouseClicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
-	withinBounds := (cursorPositionX < screenWidth && cursorPositionY < screenHeight &&
-		cursorPositionX >= 0 && cursorPositionY >= 0)
+	withinBounds := g.world.WithinBounds(
+		uint32(cursorPositionX),
+		uint32(cursorPositionY),
+	)
 
 	if mouseClicked && withinBounds {
 		sp := core.NewSandParticle(
