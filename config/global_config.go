@@ -1,9 +1,11 @@
 package config
 
 const (
-	ScreenWidth  = 320
-	ScreenHeight = 240
-	Gravity      = 1
-	MaxVelocity  = 10
-	ParticleSize = 1
+	ScreenWidth        = 500
+	ScreenHeight       = ScreenWidth * 9 / 16
+	Gravity            = 1
+	MaxVelocity        = 10
+	ParticleSize       = 1
+	MaxTPS             = 60
+	BrushSizeIncrement = 10
 )

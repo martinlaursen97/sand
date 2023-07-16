@@ -13,7 +13,7 @@ import (
 
 const (
 	sandInitialVelocityX = 0.5
-	sandInitialVelocityY = 0.15
+	sandInitialVelocityY = 0
 )
 
 type SandParticle struct {
@@ -30,52 +30,54 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 	sp.Velocity.Y += config.Gravity
 	sp.Velocity.Y = math.Min(sp.Velocity.Y, config.MaxVelocity)
 
-	nextPosition, collided := sp.CheckCollisionsBelowAndSides(world)
+	nextPos, collided := sp.checkCollisionsAndGetNextPosition(world)
 
 	if !collided {
-		nextPosition = sp.GetNextPosition(world)
+		nextPos = sp.getNextPosition(world)
 	}
 
-	nextPosition.X, nextPosition.Y = utils.CheckBounds(nextPosition.X, nextPosition.Y)
+	hasMoved := nextPos.X != sp.Position.X || nextPos.Y != sp.Position.Y
 
-	nextParticle := world.GetParticleAt(int(nextPosition.X), int(nextPosition.Y))
-
-	world.SwapPosition(sp, nextParticle)
-	sp.Position = nextPosition
+	if hasMoved {
+		world.MoveParticle(sp, nextPos)
+	}
 
 	sp.HasUpdated = true
 }
 
-func (sp *SandParticle) CheckCollisionsBelowAndSides(world *World) (maths.Vector, bool) {
-	if !world.IsEmpty(int(sp.Position.X), int(sp.Position.Y+1)) {
+func (sp *SandParticle) checkCollisionsAndGetNextPosition(world *World) (maths.Vector, bool) {
+
+	belowIsEmpty := world.IsEmpty(sp.Position.X, sp.Position.Y+1)
+
+	if !belowIsEmpty {
 		sp.ResetVelocity()
+
+		leftPos := maths.Vector{X: sp.Position.X - 1, Y: sp.Position.Y + 1}
+		rightPos := maths.Vector{X: sp.Position.X + 1, Y: sp.Position.Y + 1}
+
+		leftIsEmpty := utils.WithinBounds(leftPos.X, leftPos.Y) &&
+			world.IsEmpty(leftPos.X, leftPos.Y)
+		rightIsEmpty := utils.WithinBounds(rightPos.X, rightPos.Y) &&
+			world.IsEmpty(rightPos.X, rightPos.Y)
 
 		order := rand.Intn(2)
 
 		if order == 0 {
-			if utils.WithinBounds(int(sp.Position.X-1), int(sp.Position.Y+1)) &&
-				world.IsEmpty(int(sp.Position.X-1), int(sp.Position.Y+1)) {
-
-				return maths.Vector{X: sp.Position.X - 1, Y: sp.Position.Y + 1}, true
-			} else if utils.WithinBounds(int(sp.Position.X+1), int(sp.Position.Y+1)) &&
-				world.IsEmpty(int(sp.Position.X+1), int(sp.Position.Y+1)) {
-
-				return maths.Vector{X: sp.Position.X + 1, Y: sp.Position.Y + 1}, true
+			if leftIsEmpty {
+				return leftPos, true
+			} else if rightIsEmpty {
+				return rightPos, true
 			}
 		} else {
-			if utils.WithinBounds(int(sp.Position.X+1), int(sp.Position.Y+1)) &&
-				world.IsEmpty(int(sp.Position.X+1), int(sp.Position.Y+1)) {
-
-				return maths.Vector{X: sp.Position.X + 1, Y: sp.Position.Y + 1}, true
-			} else if utils.WithinBounds(int(sp.Position.X-1), int(sp.Position.Y+1)) &&
-				world.IsEmpty(int(sp.Position.X-1), int(sp.Position.Y+1)) {
-
-				return maths.Vector{X: sp.Position.X - 1, Y: sp.Position.Y + 1}, true
+			if rightIsEmpty {
+				return rightPos, true
+			} else if leftIsEmpty {
+				return leftPos, true
 			}
 		}
 	}
 
-	return maths.Vector{}, false
+	return sp.Position, false
 }
 
 func (sp *SandParticle) Draw(screen *ebiten.Image) {
@@ -86,7 +88,7 @@ func (sp *SandParticle) Reset() {
 	sp.HasUpdated = false
 }
 
-func (sp *SandParticle) GetNextPosition(world *World) maths.Vector {
+func (sp *SandParticle) getNextPosition(world *World) maths.Vector {
 
 	nextPos := maths.Vector{
 		X: sp.Position.X + sp.Velocity.X,
@@ -96,22 +98,22 @@ func (sp *SandParticle) GetNextPosition(world *World) maths.Vector {
 	vx := nextPos.X - sp.Position.X
 	vy := nextPos.Y - sp.Position.Y
 
-	dist := math.Sqrt(vx*vx + vy*vy)
+	length := math.Sqrt(vx*vx + vy*vy)
 
-	xIncrement, yIncrement := vx/dist, vy/dist
+	xIncrement, yIncrement := vx/length, vy/length
 
-	numPoints := int(dist)
+	numPoints := int(length)
 
 	prevX, prevY := sp.Position.X, sp.Position.Y
 
 	for i := 1; i <= numPoints; i++ {
-		x := sp.Position.X + xIncrement*float64(i)
-		y := sp.Position.Y + yIncrement*float64(i)
+		dx := sp.Position.X + xIncrement*float64(i)
+		dy := sp.Position.Y + yIncrement*float64(i)
 
-		y = utils.RoundYCoordinate(y)
-		x, y = utils.CheckBounds(x, y)
+		dy = utils.RoundYCoordinate(dy)
+		dx, dy = utils.CheckBounds(dx, dy)
 
-		if _, ok := world.GetParticleAt(int(x), int(y)).(*AirParticle); !ok {
+		if !world.IsEmpty(dx, dy) {
 			// Hit something, return the position before the collision
 
 			sp.ResetVelocity()
@@ -119,7 +121,7 @@ func (sp *SandParticle) GetNextPosition(world *World) maths.Vector {
 			return maths.Vector{X: prevX, Y: prevY}
 		}
 
-		prevX, prevY = x, y
+		prevX, prevY = dx, dy
 
 	}
 
@@ -141,7 +143,10 @@ func CreateSandParticle(x, y int) *SandParticle {
 			Size:     config.ParticleSize,
 			Color:    randomSandColor(),
 		},
-		Velocity: maths.Vector{X: -sandInitialVelocityX + rand.Float64(), Y: sandInitialVelocityY},
+		Velocity: maths.Vector{
+			X: float64(utils.RandomFloatInRange(-sandInitialVelocityX, sandInitialVelocityX)),
+			Y: sandInitialVelocityY,
+		},
 	}
 
 	return p
@@ -155,3 +160,12 @@ func randomSandColor() color.RGBA {
 		A: 0,
 	}
 }
+
+// func randomSandColor() color.RGBA {
+// 	return color.RGBA{
+// 		R: utils.RandomUnsignedByteInRange(50, 80),
+// 		G: utils.RandomUnsignedByteInRange(45, 70),
+// 		B: utils.RandomUnsignedByteInRange(40, 55),
+// 		A: 0,
+// 	}
+// }

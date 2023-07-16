@@ -13,6 +13,7 @@ import (
 type Game struct {
 	world     *core.World
 	brushSize int
+	paused    bool
 }
 
 func (g *Game) Update() error {
@@ -24,8 +25,7 @@ func (g *Game) Update() error {
 
 	mouseClicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 	spacePressed := ebiten.IsKeyPressed(ebiten.KeySpace)
-	increaseBrushSize := ebiten.IsKeyPressed(ebiten.Key1)
-	decreaseBrushSize := ebiten.IsKeyPressed(ebiten.Key2)
+	_, dy := ebiten.Wheel()
 
 	if mouseClicked {
 		g.world.DrawWithBrush(g.brushSize, cursorPositionX, cursorPositionY)
@@ -35,13 +35,15 @@ func (g *Game) Update() error {
 		g.world.Clear()
 	}
 
-	if increaseBrushSize {
-		g.brushSize += 2
+	if dy > 0 {
+		g.brushSize += config.BrushSizeIncrement
 	}
 
-	if decreaseBrushSize {
-		if g.brushSize > 1 {
-			g.brushSize -= 2
+	if dy < 0 {
+		if g.brushSize-config.BrushSizeIncrement > 0 {
+			g.brushSize -= config.BrushSizeIncrement
+		} else {
+			g.brushSize = 1
 		}
 	}
 
@@ -53,6 +55,9 @@ func (g *Game) Update() error {
 func (g *Game) Draw(screen *ebiten.Image) {
 	g.world.Draw(screen)
 	ebitenutil.DebugPrint(screen, fmt.Sprintf("FPS: %d", int(ebiten.ActualFPS())))
+
+	particleCount := g.world.GetParticleCount()
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Particles: %d", particleCount), 0, 15)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -66,6 +71,7 @@ func main() {
 	game := &Game{}
 	game.world = core.NewWorld()
 	game.brushSize = 5
+	game.paused = false
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

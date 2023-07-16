@@ -35,7 +35,27 @@ func CheckBounds(x, y float64) (float64, float64) {
 	return x, y
 }
 
-func WithinBounds(x, y int) bool {
+func WithinBounds(x, y float64) bool {
+	if x < 0 {
+		return false
+	}
+
+	if x >= config.ScreenWidth {
+		return false
+	}
+
+	if y < 0 {
+		return false
+	}
+
+	if y >= config.ScreenHeight {
+		return false
+	}
+
+	return true
+}
+
+func WithinBoundsInt(x, y int) bool {
 	if x < 0 {
 		return false
 	}
@@ -57,4 +77,8 @@ func WithinBounds(x, y int) bool {
 
 func RandomUnsignedByteInRange(min, max uint8) uint8 {
 	return uint8(rand.Intn(int(max-min)) + int(min))
+}
+
+func RandomFloatInRange(min, max float64) float64 {
+	return rand.Float64()*(max-min) + min
 }
