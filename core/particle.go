@@ -26,6 +26,10 @@ type MoveableSolid interface {
 	MoveableParticle
 }
 
+type ImmovableParticle interface {
+	Particle
+}
+
 type BaseParticle struct {
 	Position   maths.Vector
 	Size       uint32
@@ -39,4 +43,27 @@ func (p *BaseParticle) GetPosition() maths.Vector {
 
 func (p *BaseParticle) SetPosition(v maths.Vector) {
 	p.Position = v
+}
+
+func (p *BaseParticle) Reset() {
+	p.HasUpdated = false
+}
+
+func (p *BaseParticle) Draw(screen *ebiten.Image) {
+	screen.Set(int(p.Position.X), int(p.Position.Y), p.Color)
+}
+
+type Moveable struct {
+	BaseParticle
+	Velocity  maths.Vector
+	IsFalling bool
+}
+
+func (m *Moveable) ResetVelocity() {
+	m.Velocity.X = 0
+	m.Velocity.Y = 0
+}
+
+type Immovable struct {
+	BaseParticle
 }

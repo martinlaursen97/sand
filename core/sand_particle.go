@@ -5,7 +5,6 @@ import (
 	"math"
 	"math/rand"
 
-	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/martinlaursen97/sand/config"
 	"github.com/martinlaursen97/sand/maths"
 	"github.com/martinlaursen97/sand/utils"
@@ -13,13 +12,15 @@ import (
 
 const (
 	sandInitialVelocityX = 0.5
-	sandInitialVelocityY = 0
+	sandInitialVelocityY = 0.0
 )
 
 type SandParticle struct {
-	BaseParticle
-	Velocity  maths.Vector
-	IsFalling bool
+	Moveable
+}
+
+type Sand interface {
+	CreateSandParticle(x, y int) *SandParticle
 }
 
 func (sp *SandParticle) Update(world *World, dt float64) {
@@ -36,9 +37,9 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 		nextPos = sp.getNextPosition(world)
 	}
 
-	hasMoved := nextPos.X != sp.Position.X || nextPos.Y != sp.Position.Y
+	sp.IsFalling = nextPos.X != sp.Position.X || nextPos.Y != sp.Position.Y
 
-	if hasMoved {
+	if sp.IsFalling {
 		world.MoveParticle(sp, nextPos)
 	}
 
@@ -47,10 +48,19 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 
 func (sp *SandParticle) checkCollisionsAndGetNextPosition(world *World) (maths.Vector, bool) {
 
+	if sp.Velocity.Y < 0 {
+		return sp.Position, false
+	}
+
 	belowIsEmpty := world.IsEmpty(sp.Position.X, sp.Position.Y+1)
 
 	if !belowIsEmpty {
-		sp.ResetVelocity()
+
+		//sp.ResetVelocity()
+
+		if sp.IsFalling {
+			return sp.Position, false
+		}
 
 		leftPos := maths.Vector{X: sp.Position.X - 1, Y: sp.Position.Y + 1}
 		rightPos := maths.Vector{X: sp.Position.X + 1, Y: sp.Position.Y + 1}
@@ -77,15 +87,9 @@ func (sp *SandParticle) checkCollisionsAndGetNextPosition(world *World) (maths.V
 		}
 	}
 
+	sp.IsFalling = belowIsEmpty
+
 	return sp.Position, false
-}
-
-func (sp *SandParticle) Draw(screen *ebiten.Image) {
-	screen.Set(int(sp.Position.X), int(sp.Position.Y), sp.Color)
-}
-
-func (sp *SandParticle) Reset() {
-	sp.HasUpdated = false
 }
 
 func (sp *SandParticle) getNextPosition(world *World) maths.Vector {
@@ -113,11 +117,10 @@ func (sp *SandParticle) getNextPosition(world *World) maths.Vector {
 		dy = utils.RoundYCoordinate(dy)
 		dx, dy = utils.CheckBounds(dx, dy)
 
+		// Hit something, return the position before the collision
 		if !world.IsEmpty(dx, dy) {
-			// Hit something, return the position before the collision
 
 			sp.ResetVelocity()
-
 			return maths.Vector{X: prevX, Y: prevY}
 		}
 
@@ -125,27 +128,31 @@ func (sp *SandParticle) getNextPosition(world *World) maths.Vector {
 
 	}
 
-	// Did not hit anything, return the next position
 	nextPos.X, nextPos.Y = utils.CheckBounds(nextPos.X, nextPos.Y)
 
+	// Did not hit anything, return the next position
 	return nextPos
 }
 
 func (sp *SandParticle) ResetVelocity() {
-	sp.Velocity.X = 0
-	sp.Velocity.Y = 0
+	sp.Velocity.X = getRandomVelocityX()
+	sp.Velocity.Y = sandInitialVelocityY
 }
 
 func CreateSandParticle(x, y int) *SandParticle {
+
 	p := &SandParticle{
-		BaseParticle: BaseParticle{
-			Position: maths.Vector{X: float64(x), Y: float64(y)},
-			Size:     config.ParticleSize,
-			Color:    randomSandColor(),
-		},
-		Velocity: maths.Vector{
-			X: float64(utils.RandomFloatInRange(-sandInitialVelocityX, sandInitialVelocityX)),
-			Y: sandInitialVelocityY,
+		Moveable: Moveable{
+			BaseParticle: BaseParticle{
+				Position: maths.Vector{X: float64(x), Y: float64(y)},
+				Size:     config.ParticleSize,
+				Color:    randomSandColor(),
+			},
+			Velocity: maths.Vector{
+				X: getRandomVelocityX(),
+				Y: sandInitialVelocityY,
+			},
+			IsFalling: true,
 		},
 	}
 
@@ -159,6 +166,10 @@ func randomSandColor() color.RGBA {
 		B: utils.RandomUnsignedByteInRange(110, 140),
 		A: 0,
 	}
+}
+
+func getRandomVelocityX() float64 {
+	return utils.RandomFloatInRange(-sandInitialVelocityX, sandInitialVelocityX)
 }
 
 // func randomSandColor() color.RGBA {

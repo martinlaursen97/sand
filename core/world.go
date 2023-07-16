@@ -87,20 +87,31 @@ func (w *World) InsertParticle(p Particle) {
 	}
 }
 
-func (w *World) DrawWithBrush(size, x, y int) {
+func (w *World) DrawWithBrush(size, x, y, particleNum int) {
 	for i := -size / 2; i <= size/2; i += 2 {
 		if utils.WithinBoundsInt(x+i, y) {
-			w.InsertParticle(CreateSandParticle(x+i, y))
+			if particleNum == 1 {
+				w.InsertParticle(CreateSandParticle(x+i, y))
+			} else if particleNum == 2 {
+				w.InsertParticle(CreateWallParticle(x+i, y))
+			} else if particleNum == 3 {
+				w.Particles[x+i][y] = nil
+			}
 		}
 	}
 }
 
 func (w *World) MoveParticle(p MoveableParticle, nextPosition maths.Vector) {
-	if w.Particles[int(nextPosition.X)][int(nextPosition.Y)] == nil {
-		w.Particles[int(nextPosition.X)][int(nextPosition.Y)] = p
-		w.Particles[int(p.GetPosition().X)][int(p.GetPosition().Y)] = nil
-		p.SetPosition(nextPosition)
+	// Ensure that the particle is not overwritten with nil
+	if int(nextPosition.X) == int(p.GetPosition().X) &&
+		int(nextPosition.Y) == int(p.GetPosition().Y) {
+		return
 	}
+
+	w.Particles[int(nextPosition.X)][int(nextPosition.Y)] = p
+	w.Particles[int(p.GetPosition().X)][int(p.GetPosition().Y)] = nil
+	p.SetPosition(nextPosition)
+
 }
 
 func (w *World) GetParticleCount() int {

@@ -11,9 +11,10 @@ import (
 )
 
 type Game struct {
-	world     *core.World
-	brushSize int
-	paused    bool
+	world       *core.World
+	brushSize   int
+	paused      bool
+	particleNum int
 }
 
 func (g *Game) Update() error {
@@ -25,11 +26,10 @@ func (g *Game) Update() error {
 
 	mouseClicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 	spacePressed := ebiten.IsKeyPressed(ebiten.KeySpace)
+	pickSand := ebiten.IsKeyPressed(ebiten.Key1)
+	pickWall := ebiten.IsKeyPressed(ebiten.Key2)
+	pickEraser := ebiten.IsKeyPressed(ebiten.Key3)
 	_, dy := ebiten.Wheel()
-
-	if mouseClicked {
-		g.world.DrawWithBrush(g.brushSize, cursorPositionX, cursorPositionY)
-	}
 
 	if spacePressed {
 		g.world.Clear()
@@ -45,6 +45,22 @@ func (g *Game) Update() error {
 		} else {
 			g.brushSize = 1
 		}
+	}
+
+	if pickSand {
+		g.particleNum = 1
+	}
+
+	if pickWall {
+		g.particleNum = 2
+	}
+
+	if pickEraser {
+		g.particleNum = 3
+	}
+
+	if mouseClicked {
+		g.world.DrawWithBrush(g.brushSize, cursorPositionX, cursorPositionY, g.particleNum)
 	}
 
 	g.world.Reset()
@@ -72,6 +88,7 @@ func main() {
 	game.world = core.NewWorld()
 	game.brushSize = 5
 	game.paused = false
+	game.particleNum = 1
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)
