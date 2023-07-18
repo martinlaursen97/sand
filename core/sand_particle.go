@@ -2,7 +2,6 @@ package core
 
 import (
 	"image/color"
-	"math"
 	"math/rand"
 
 	"github.com/martinlaursen97/sand/config"
@@ -29,15 +28,14 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 	}
 
 	sp.Velocity.Y += config.Gravity
-	sp.Velocity.Y = math.Min(sp.Velocity.Y, config.MaxVelocity)
 
 	nextPos, collided := sp.checkCollisionsAndGetNextPosition(world)
 
 	if !collided {
-		nextPos = sp.getNextPosition(world)
+		nextPos = sp.GetNextPosition(world)
 	}
 
-	sp.IsFalling = nextPos.X != sp.Position.X || nextPos.Y != sp.Position.Y
+	sp.IsFalling = (nextPos.X != sp.Position.X || nextPos.Y != sp.Position.Y)
 
 	if sp.IsFalling {
 		world.MoveParticle(sp, nextPos)
@@ -56,9 +54,8 @@ func (sp *SandParticle) checkCollisionsAndGetNextPosition(world *World) (maths.V
 
 	if !belowIsEmpty {
 
-		//sp.ResetVelocity()
-
 		if sp.IsFalling {
+			sp.IsFalling = false
 			return sp.Position, false
 		}
 
@@ -90,48 +87,6 @@ func (sp *SandParticle) checkCollisionsAndGetNextPosition(world *World) (maths.V
 	sp.IsFalling = belowIsEmpty
 
 	return sp.Position, false
-}
-
-func (sp *SandParticle) getNextPosition(world *World) maths.Vector {
-
-	nextPos := maths.Vector{
-		X: sp.Position.X + sp.Velocity.X,
-		Y: sp.Position.Y + sp.Velocity.Y,
-	}
-
-	vx := nextPos.X - sp.Position.X
-	vy := nextPos.Y - sp.Position.Y
-
-	length := math.Sqrt(vx*vx + vy*vy)
-
-	xIncrement, yIncrement := vx/length, vy/length
-
-	numPoints := int(length)
-
-	prevX, prevY := sp.Position.X, sp.Position.Y
-
-	for i := 1; i <= numPoints; i++ {
-		dx := sp.Position.X + xIncrement*float64(i)
-		dy := sp.Position.Y + yIncrement*float64(i)
-
-		dy = utils.RoundYCoordinate(dy)
-		dx, dy = utils.CheckBounds(dx, dy)
-
-		// Hit something, return the position before the collision
-		if !world.IsEmpty(dx, dy) {
-
-			sp.ResetVelocity()
-			return maths.Vector{X: prevX, Y: prevY}
-		}
-
-		prevX, prevY = dx, dy
-
-	}
-
-	nextPos.X, nextPos.Y = utils.CheckBounds(nextPos.X, nextPos.Y)
-
-	// Did not hit anything, return the next position
-	return nextPos
 }
 
 func (sp *SandParticle) ResetVelocity() {

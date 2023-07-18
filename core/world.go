@@ -75,8 +75,8 @@ func (w *World) SwapPosition(p1, p2 MoveableParticle) {
 	p2.SetPosition(p1Pos)
 }
 
-func (w *World) GetParticleAt(x, y int) Particle {
-	return w.Particles[x][y]
+func (w *World) GetParticleAt(x, y float64) Particle {
+	return w.Particles[int(x)][int(y)]
 }
 
 func (w *World) InsertParticle(p Particle) {
@@ -87,8 +87,17 @@ func (w *World) InsertParticle(p Particle) {
 	}
 }
 
-func (w *World) DrawWithBrush(size, x, y, particleNum int) {
-	for i := -size / 2; i <= size/2; i += 2 {
+// To be used with TraversePathAndApplyFunc
+func (w *World) DrawWithBrush(args ...any) any {
+	fx := args[0].(float64)
+	fy := args[1].(float64)
+
+	x, y := int(fx), int(fy)
+
+	size := args[2].(int)
+	particleNum := args[3].(int)
+
+	for i := -size / 2; i <= size/2; i++ {
 		if utils.WithinBoundsInt(x+i, y) {
 			if particleNum == 1 {
 				w.InsertParticle(CreateSandParticle(x+i, y))
@@ -99,6 +108,8 @@ func (w *World) DrawWithBrush(size, x, y, particleNum int) {
 			}
 		}
 	}
+
+	return nil
 }
 
 func (w *World) MoveParticle(p MoveableParticle, nextPosition maths.Vector) {
@@ -120,6 +131,36 @@ func (w *World) GetParticleCount() int {
 		for _, particle := range row {
 			if particle != nil {
 				count++
+			}
+		}
+	}
+	return count
+}
+
+// Get sand particle count
+func (w *World) GetSandParticleCount() int {
+	count := 0
+	for _, row := range w.Particles {
+		for _, particle := range row {
+			if particle != nil {
+				if _, ok := particle.(*SandParticle); ok {
+					count++
+				}
+			}
+		}
+	}
+	return count
+}
+
+// Get wall particle count
+func (w *World) GetWallParticleCount() int {
+	count := 0
+	for _, row := range w.Particles {
+		for _, particle := range row {
+			if particle != nil {
+				if _, ok := particle.(*WallParticle); ok {
+					count++
+				}
 			}
 		}
 	}

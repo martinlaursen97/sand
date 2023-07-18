@@ -2,9 +2,11 @@ package core
 
 import (
 	"image/color"
+	"math"
 
 	"github.com/hajimehoshi/ebiten/v2"
 	"github.com/martinlaursen97/sand/maths"
+	"github.com/martinlaursen97/sand/utils"
 )
 
 type Particle interface {
@@ -16,10 +18,11 @@ type Particle interface {
 
 type MoveableParticle interface {
 	Particle
-	getNextPosition(world *World) maths.Vector
+	GetNextPosition(world *World) maths.Vector
 	checkCollisionsAndGetNextPosition(world *World) (maths.Vector, bool)
 	ResetVelocity()
 	SetPosition(maths.Vector)
+	GetIsFalling() bool
 }
 
 type MoveableSolid interface {
@@ -62,6 +65,53 @@ type Moveable struct {
 func (m *Moveable) ResetVelocity() {
 	m.Velocity.X = 0
 	m.Velocity.Y = 0
+}
+
+func (m *Moveable) GetIsFalling() bool {
+	return m.IsFalling
+}
+
+func (m *Moveable) GetNextPosition(world *World) maths.Vector {
+	nextPos := maths.Vector{
+		X: m.Position.X + m.Velocity.X,
+		Y: m.Position.Y + m.Velocity.Y,
+	}
+
+	vx := nextPos.X - m.Position.X
+	vy := nextPos.Y - m.Position.Y
+	length := math.Sqrt(vx*vx + vy*vy)
+
+	xIncrement, yIncrement := vx/length, vy/length
+	numPoints := int(length)
+
+	if numPoints == 0 {
+		return nextPos
+	}
+
+	prevX, prevY := m.Position.X, m.Position.Y
+
+	for i := 1; i <= numPoints; i++ {
+		dx := m.Position.X + xIncrement*float64(i)
+		dy := m.Position.Y + yIncrement*float64(i)
+
+		dy = utils.RoundYCoordinate(dy)
+		dx, dy = utils.CheckBounds(dx, dy)
+
+		// Hit something, return the position before the collision
+		if !world.IsEmpty(dx, dy) {
+
+			m.ResetVelocity()
+
+			return maths.Vector{X: prevX, Y: prevY}
+		}
+
+		prevX, prevY = dx, dy
+	}
+
+	nextPos.X, nextPos.Y = utils.CheckBounds(nextPos.X, nextPos.Y)
+
+	// Did not hit anything, return the next position
+	return nextPos
 }
 
 type Immovable struct {

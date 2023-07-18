@@ -8,13 +8,17 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/ebitenutil"
 	"github.com/martinlaursen97/sand/config"
 	"github.com/martinlaursen97/sand/core"
+	"github.com/martinlaursen97/sand/maths"
 )
 
 type Game struct {
-	world       *core.World
-	brushSize   int
-	paused      bool
-	particleNum int
+	world         *core.World
+	brushSize     int
+	paused        bool
+	particleNum   int
+	mouseClicked  bool
+	prevCursor    maths.Vector
+	currentCursor maths.Vector
 }
 
 func (g *Game) Update() error {
@@ -60,7 +64,24 @@ func (g *Game) Update() error {
 	}
 
 	if mouseClicked {
-		g.world.DrawWithBrush(g.brushSize, cursorPositionX, cursorPositionY, g.particleNum)
+		g.prevCursor.X = g.currentCursor.X
+		g.prevCursor.Y = g.currentCursor.Y
+
+		g.currentCursor.X = float64(cursorPositionX)
+		g.currentCursor.Y = float64(cursorPositionY)
+
+		// Draw a line between the previous and current cursor position
+		core.TraversePathAndApplyFunc(
+			g.prevCursor,
+			g.currentCursor,
+			core.FunctionInput{
+				Func: g.world.DrawWithBrush,
+				Args: []interface{}{g.brushSize, g.particleNum},
+			},
+		)
+	} else {
+		g.currentCursor.X = float64(cursorPositionX)
+		g.currentCursor.Y = float64(cursorPositionY)
 	}
 
 	g.world.Reset()
@@ -74,6 +95,12 @@ func (g *Game) Draw(screen *ebiten.Image) {
 
 	particleCount := g.world.GetParticleCount()
 	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Particles: %d", particleCount), 0, 15)
+
+	sandCount := g.world.GetSandParticleCount()
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Sand: %d", sandCount), 0, 30)
+
+	wallCount := g.world.GetWallParticleCount()
+	ebitenutil.DebugPrintAt(screen, fmt.Sprintf("Walls: %d", wallCount), 0, 45)
 }
 
 func (g *Game) Layout(outsideWidth, outsideHeight int) (int, int) {
@@ -88,7 +115,7 @@ func main() {
 	game.world = core.NewWorld()
 	game.brushSize = 5
 	game.paused = false
-	game.particleNum = 1
+	game.particleNum = 2
 
 	if err := ebiten.RunGame(game); err != nil {
 		log.Fatal(err)

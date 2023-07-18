@@ -29,9 +29,9 @@ func CreateWallParticle(x, y int) *WallParticle {
 
 func randomWallColor() color.RGBA {
 	return color.RGBA{
-		R: utils.RandomUnsignedByteInRange(160, 180),
-		G: utils.RandomUnsignedByteInRange(160, 180),
-		B: utils.RandomUnsignedByteInRange(160, 180),
+		R: utils.RandomUnsignedByteInRange(80, 100),
+		G: utils.RandomUnsignedByteInRange(80, 100),
+		B: utils.RandomUnsignedByteInRange(80, 100),
 		A: 0,
 	}
 }
