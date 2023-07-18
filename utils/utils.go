@@ -82,3 +82,10 @@ func RandomUnsignedByteInRange(min, max uint8) uint8 {
 func RandomFloatInRange(min, max float64) float64 {
 	return rand.Float64()*(max-min) + min
 }
+
+func MinUint8(a, b uint8) uint8 {
+	if a < b {
+		return a
+	}
+	return b
+}

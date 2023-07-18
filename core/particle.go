@@ -20,11 +20,33 @@ type ImmovableSolid interface {
 	Particle
 }
 
+type MoveableSolid interface {
+	MoveableParticle
+}
+
+type Moveable struct {
+	BaseParticle
+	Velocity  maths.Vector
+	IsFalling bool
+	Density   float64
+}
+
+type Immovable struct {
+	BaseParticle
+}
 type BaseParticle struct {
 	Position   maths.Vector
 	Size       uint32
 	Color      color.RGBA
 	HasUpdated bool
+}
+
+type LiquidSolid interface {
+	MoveableParticle
+}
+
+type Liquid struct {
+	Moveable
 }
 
 func (p *BaseParticle) GetPosition() maths.Vector {
@@ -50,16 +72,7 @@ type MoveableParticle interface {
 	ResetVelocity()
 	SetPosition(maths.Vector)
 	GetIsFalling() bool
-}
-
-type MoveableSolid interface {
-	MoveableParticle
-}
-
-type Moveable struct {
-	BaseParticle
-	Velocity  maths.Vector
-	IsFalling bool
+	GetDensity() float64
 }
 
 func (m *Moveable) GetIsFalling() bool {
@@ -104,8 +117,4 @@ func (m *Moveable) GetPointBeforeCollision(world *World) (maths.Vector, bool) {
 
 	// Did not hit anything, return the next position
 	return nextPos, false
-}
-
-type Immovable struct {
-	BaseParticle
 }

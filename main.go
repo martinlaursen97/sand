@@ -31,8 +31,10 @@ func (g *Game) Update() error {
 	mouseClicked := ebiten.IsMouseButtonPressed(ebiten.MouseButtonLeft)
 	spacePressed := ebiten.IsKeyPressed(ebiten.KeySpace)
 	pickSand := ebiten.IsKeyPressed(ebiten.Key1)
-	pickWall := ebiten.IsKeyPressed(ebiten.Key2)
-	pickEraser := ebiten.IsKeyPressed(ebiten.Key3)
+	pickWater := ebiten.IsKeyPressed(ebiten.Key2)
+	pickWall := ebiten.IsKeyPressed(ebiten.Key3)
+	pickEraser := ebiten.IsKeyPressed(ebiten.Key4)
+
 	_, dy := ebiten.Wheel()
 
 	if spacePressed {
@@ -55,12 +57,16 @@ func (g *Game) Update() error {
 		g.particleNum = 1
 	}
 
-	if pickWall {
+	if pickWater {
 		g.particleNum = 2
 	}
 
-	if pickEraser {
+	if pickWall {
 		g.particleNum = 3
+	}
+
+	if pickEraser {
+		g.particleNum = 4
 	}
 
 	if mouseClicked {

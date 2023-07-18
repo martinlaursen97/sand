@@ -79,6 +79,19 @@ func (w *World) GetParticleAt(x, y float64) Particle {
 	return w.Particles[int(x)][int(y)]
 }
 
+func (w *World) GetMoveableParticleAt(x, y float64) MoveableParticle {
+	particle := w.GetParticleAt(x, y)
+	if particle == nil {
+		return nil
+	}
+
+	if moveableParticle, ok := particle.(MoveableParticle); ok {
+		return moveableParticle
+	}
+
+	return nil
+}
+
 func (w *World) InsertParticle(p Particle) {
 	position := p.GetPosition()
 	x, y := int(position.X), int(position.Y)
@@ -102,8 +115,10 @@ func (w *World) DrawWithBrush(args ...any) any {
 			if particleNum == 1 {
 				w.InsertParticle(CreateSandParticle(x+i, y))
 			} else if particleNum == 2 {
-				w.InsertParticle(CreateWallParticle(x+i, y))
+				w.InsertParticle(CreateWaterParticle(x+i, y))
 			} else if particleNum == 3 {
+				w.InsertParticle(CreateWallParticle(x+i, y))
+			} else if particleNum == 4 {
 				w.Particles[x+i][y] = nil
 			}
 		}
@@ -116,6 +131,10 @@ func (w *World) MoveParticle(p MoveableParticle, nextPosition maths.Vector) {
 	// Ensure that the particle is not overwritten with nil
 	if int(nextPosition.X) == int(p.GetPosition().X) &&
 		int(nextPosition.Y) == int(p.GetPosition().Y) {
+		return
+	}
+
+	if w.GetParticleAt(nextPosition.X, nextPosition.Y) != nil {
 		return
 	}
 

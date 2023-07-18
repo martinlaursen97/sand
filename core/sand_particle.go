@@ -2,6 +2,7 @@ package core
 
 import (
 	"image/color"
+	"math"
 	"math/rand"
 
 	"github.com/martinlaursen97/sand/config"
@@ -12,6 +13,7 @@ import (
 const (
 	sandInitialVelocityX = 0.5
 	sandInitialVelocityY = 0.0
+	sandDensity          = 1
 )
 
 type SandParticle struct {
@@ -28,6 +30,7 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 	}
 
 	sp.Velocity.Y += config.Gravity
+	sp.Velocity.Y = math.Min(sp.Velocity.Y, config.MaxVelocity)
 
 	nextPos, collided := sp.checkCollisionsAndGetNextPosition(world)
 
@@ -50,13 +53,23 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 
 func (sp *SandParticle) checkCollisionsAndGetNextPosition(world *World) (maths.Vector, bool) {
 
-	if sp.Velocity.Y < 0 {
+	if sp.Velocity.Y < 0 || sp.Position.Y+1 >= config.ScreenHeight {
 		return sp.Position, false
 	}
 
 	belowIsEmpty := world.IsEmpty(sp.Position.X, sp.Position.Y+1)
 
 	if !belowIsEmpty {
+
+		// Chec kif below is a liquid
+		belowParticle := world.GetParticleAt(sp.Position.X, sp.Position.Y+1)
+
+		if liquid, ok := belowParticle.(LiquidSolid); ok {
+			if liquid.GetDensity() < sp.Density {
+				world.SwapPosition(sp, liquid)
+				return sp.Position, false
+			}
+		}
 
 		if sp.IsFalling {
 			sp.IsFalling = false
@@ -88,13 +101,17 @@ func (sp *SandParticle) checkCollisionsAndGetNextPosition(world *World) (maths.V
 		}
 	}
 
-	sp.IsFalling = belowIsEmpty
+	sp.IsFalling = true
 
 	return sp.Position, false
 }
 
+func (sp *SandParticle) GetDensity() float64 {
+	return sp.Density
+}
+
 func (sp *SandParticle) ResetVelocity() {
-	sp.Velocity.X = getRandomVelocityX()
+	sp.Velocity.X = utils.RandomFloatInRange(-sandInitialVelocityX, sandInitialVelocityX)
 	sp.Velocity.Y = sandInitialVelocityY
 }
 
@@ -108,10 +125,11 @@ func CreateSandParticle(x, y int) *SandParticle {
 				Color:    randomSandColor(),
 			},
 			Velocity: maths.Vector{
-				X: getRandomVelocityX(),
+				X: utils.RandomFloatInRange(-sandInitialVelocityX, sandInitialVelocityX),
 				Y: sandInitialVelocityY,
 			},
 			IsFalling: true,
+			Density:   sandDensity,
 		},
 	}
 
@@ -125,10 +143,6 @@ func randomSandColor() color.RGBA {
 		B: utils.RandomUnsignedByteInRange(110, 140),
 		A: 0,
 	}
-}
-
-func getRandomVelocityX() float64 {
-	return utils.RandomFloatInRange(-sandInitialVelocityX, sandInitialVelocityX)
 }
 
 // func randomSandColor() color.RGBA {
