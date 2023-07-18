@@ -16,20 +16,7 @@ type Particle interface {
 	GetPosition() maths.Vector
 }
 
-type MoveableParticle interface {
-	Particle
-	GetNextPosition(world *World) maths.Vector
-	checkCollisionsAndGetNextPosition(world *World) (maths.Vector, bool)
-	ResetVelocity()
-	SetPosition(maths.Vector)
-	GetIsFalling() bool
-}
-
-type MoveableSolid interface {
-	MoveableParticle
-}
-
-type ImmovableParticle interface {
+type ImmovableSolid interface {
 	Particle
 }
 
@@ -56,22 +43,30 @@ func (p *BaseParticle) Draw(screen *ebiten.Image) {
 	screen.Set(int(p.Position.X), int(p.Position.Y), p.Color)
 }
 
+type MoveableParticle interface {
+	Particle
+	GetPointBeforeCollision(world *World) (maths.Vector, bool)
+	checkCollisionsAndGetNextPosition(world *World) (maths.Vector, bool)
+	ResetVelocity()
+	SetPosition(maths.Vector)
+	GetIsFalling() bool
+}
+
+type MoveableSolid interface {
+	MoveableParticle
+}
+
 type Moveable struct {
 	BaseParticle
 	Velocity  maths.Vector
 	IsFalling bool
 }
 
-func (m *Moveable) ResetVelocity() {
-	m.Velocity.X = 0
-	m.Velocity.Y = 0
-}
-
 func (m *Moveable) GetIsFalling() bool {
 	return m.IsFalling
 }
 
-func (m *Moveable) GetNextPosition(world *World) maths.Vector {
+func (m *Moveable) GetPointBeforeCollision(world *World) (maths.Vector, bool) {
 	nextPos := maths.Vector{
 		X: m.Position.X + m.Velocity.X,
 		Y: m.Position.Y + m.Velocity.Y,
@@ -85,7 +80,7 @@ func (m *Moveable) GetNextPosition(world *World) maths.Vector {
 	numPoints := int(length)
 
 	if numPoints == 0 {
-		return nextPos
+		return nextPos, false
 	}
 
 	prevX, prevY := m.Position.X, m.Position.Y
@@ -99,10 +94,7 @@ func (m *Moveable) GetNextPosition(world *World) maths.Vector {
 
 		// Hit something, return the position before the collision
 		if !world.IsEmpty(dx, dy) {
-
-			m.ResetVelocity()
-
-			return maths.Vector{X: prevX, Y: prevY}
+			return maths.Vector{X: prevX, Y: prevY}, true
 		}
 
 		prevX, prevY = dx, dy
@@ -111,7 +103,7 @@ func (m *Moveable) GetNextPosition(world *World) maths.Vector {
 	nextPos.X, nextPos.Y = utils.CheckBounds(nextPos.X, nextPos.Y)
 
 	// Did not hit anything, return the next position
-	return nextPos
+	return nextPos, false
 }
 
 type Immovable struct {

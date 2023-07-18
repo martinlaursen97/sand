@@ -32,7 +32,11 @@ func (sp *SandParticle) Update(world *World, dt float64) {
 	nextPos, collided := sp.checkCollisionsAndGetNextPosition(world)
 
 	if !collided {
-		nextPos = sp.GetNextPosition(world)
+		nextPos, collided = sp.GetPointBeforeCollision(world)
+	}
+
+	if collided {
+		sp.ResetVelocity()
 	}
 
 	sp.IsFalling = (nextPos.X != sp.Position.X || nextPos.Y != sp.Position.Y)
