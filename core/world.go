@@ -76,6 +76,10 @@ func (w *World) SwapPosition(p1, p2 MoveableParticle) {
 }
 
 func (w *World) GetParticleAt(x, y float64) Particle {
+	if !utils.WithinBounds(x, y) {
+		return nil
+	}
+
 	return w.Particles[int(x)][int(y)]
 }
 
@@ -128,7 +132,10 @@ func (w *World) DrawWithBrush(args ...any) any {
 }
 
 func (w *World) MoveParticle(p MoveableParticle, nextPosition maths.Vector) {
-	// Ensure that the particle is not overwritten with nil
+	if !utils.WithinBounds(nextPosition.X, nextPosition.Y) {
+		return
+	}
+
 	if int(nextPosition.X) == int(p.GetPosition().X) &&
 		int(nextPosition.Y) == int(p.GetPosition().Y) {
 		return
